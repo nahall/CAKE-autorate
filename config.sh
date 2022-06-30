@@ -16,10 +16,10 @@ debug=0			  # enable (1) or disable (0) out of debug lines
 
 # *** STANDARD CONFIGURATION OPTIONS ***
 
-dl_if=ifb-wg-pbr # download interface
-ul_if=wan        # upload interface
+dl_if=ifb4eth0 # download interface
+ul_if=eth0     # upload interface
 
-reflector_ping_interval_s=0.2 # (seconds, e.g. 0.2s or 2s)
+reflector_ping_interval_s=0.15 # (seconds, e.g. 0.2s or 2s)
 
 # list of reflectors to use and number of pingers to initiate
 # pingers will be initiated with reflectors in the order specified in the list 
@@ -28,20 +28,20 @@ reflector_ping_interval_s=0.2 # (seconds, e.g. 0.2s or 2s)
 # and the remaining 2 reflectors in the list will be used in the event any of the first 4 go bad
 # a bad reflector will go to the back of the queue on reflector rotation
 reflectors=("1.1.1.1" "1.0.0.1" "8.8.8.8" "8.8.4.4" "9.9.9.9" "9.9.9.10")
-no_pingers=4
+no_pingers=6
 
 # delay threshold in ms is the extent of RTT increase to classify as a delay
 # this is automatically adjusted based on maximum on the wire packet size
 # (adjustment significant at sub 12Mbit/s rates, else negligible)  
-delay_thr_ms=25 # (milliseconds)
+delay_thr_ms=75 # (milliseconds)
 
 min_dl_shaper_rate_kbps=10000  # minimum bandwidth for download (Kbit/s)
-base_dl_shaper_rate_kbps=25000 # steady state bandwidth for download (Kbit/s)
-max_dl_shaper_rate_kbps=80000  # maximum bandwidth for download (Kbit/s)
+base_dl_shaper_rate_kbps=50000 # steady state bandwidth for download (Kbit/s)
+max_dl_shaper_rate_kbps=200000  # maximum bandwidth for download (Kbit/s)
 
-min_ul_shaper_rate_kbps=25000  # minimum bandwidth for upload (Kbit/s)
-base_ul_shaper_rate_kbps=30000 # steady state bandwidth for upload (KBit/s)
-max_ul_shaper_rate_kbps=35000  # maximum bandwidth for upload (Kbit/s)
+min_ul_shaper_rate_kbps=2000  # minimum bandwidth for upload (Kbit/s)
+base_ul_shaper_rate_kbps=10000 # steady state bandwidth for upload (KBit/s)
+max_ul_shaper_rate_kbps=30000  # maximum bandwidth for upload (Kbit/s)
 
 # sleep functionality saves unecessary pings and CPU cycles by
 # pausing all active pingers when connection is not in active use
@@ -56,11 +56,11 @@ startup_wait_s=0 # number of seconds to wait on startup (e.g. to wait for things
 # interval in ms for monitoring achieved rx/tx rates
 # this is automatically adjusted based on maximum on the wire packet size
 # (adjustment significant at sub 12Mbit/s rates, else negligible)  
-monitor_achieved_rates_interval_ms=100 # (milliseconds) 
+monitor_achieved_rates_interval_ms=200 # (milliseconds) 
 
 # bufferbloat is detected when (bufferbloat_detection_thr) samples
 # out of the last (bufferbloat detection window) samples are delayed
-bufferbloat_detection_window=4  # number of samples to retain in detection window
+bufferbloat_detection_window=6  # number of samples to retain in detection window
 bufferbloat_detection_thr=2     # number of delayed samples for bufferbloat detection
 
 # RTT baseline against which to measure delays
@@ -75,14 +75,14 @@ alpha_baseline_decrease=0.9   # how rapidly baseline RTT is allowed to decrease
 # to exploit that transfer rates during bufferbloat provide an indication of line capacity
 # otherwise shaper rate is adjusted up on load high, and down on load idle or low
 # and held the same on load medium
-achieved_rate_adjust_down_bufferbloat=0.9 # how rapidly to reduce achieved rate upon detection of bufferbloat 
-shaper_rate_adjust_down_bufferbloat=0.9   # how rapidly to reduce shaper rate upon detection of bufferbloat 
-shaper_rate_adjust_up_load_high=1.01      # how rapidly to increase shaper rate upon high load detected 
-shaper_rate_adjust_down_load_low=0.9      # how rapidly to return down to base shaper rate upon idle or low load detected 
-shaper_rate_adjust_up_load_low=1.01       # how rapidly to return up to base shaper rate upon idle or low load detected 
+achieved_rate_adjust_down_bufferbloat=0.85 # how rapidly to reduce achieved rate upon detection of bufferbloat 
+shaper_rate_adjust_down_bufferbloat=0.85   # how rapidly to reduce shaper rate upon detection of bufferbloat 
+shaper_rate_adjust_up_load_high=1.02       # how rapidly to increase shaper rate upon high load detected 
+shaper_rate_adjust_down_load_low=0.8       # how rapidly to return down to base shaper rate upon idle or low load detected 
+shaper_rate_adjust_up_load_low=1.01        # how rapidly to return up to base shaper rate upon idle or low load detected 
 
 # the load is categoried as low if < medium_load_thr, medium if > medium_load_thr and high if > high_load_thr relative to the current shaper rate
-medium_load_thr=0.50 # % of currently set bandwidth for detecting medium load
+medium_load_thr=0.75 # % of currently set bandwidth for detecting medium load
 high_load_thr=0.75   # % of currently set bandwidth for detecting high load
 
 # refractory periods between successive bufferbloat/decay rate changes
