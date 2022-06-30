@@ -497,6 +497,9 @@ ul_shaper_rate_kbps=$base_ul_shaper_rate_kbps
 last_dl_shaper_rate_kbps=$dl_shaper_rate_kbps
 last_ul_shaper_rate_kbps=$ul_shaper_rate_kbps
 
+saved_dl_shaper_rate_kbps=0
+saved_ul_shaper_rate_kbps=0
+
 get_max_wire_packet_size_bits $dl_if dl_max_wire_packet_size_bits  
 get_max_wire_packet_size_bits $ul_if ul_max_wire_packet_size_bits
 
@@ -562,9 +565,44 @@ do
 
 		classify_load $dl_load_percent $dl_achieved_rate_kbps dl_load_condition
 		classify_load $ul_load_percent $ul_achieved_rate_kbps ul_load_condition
-	
-		get_next_shaper_rate $min_dl_shaper_rate_kbps $base_dl_shaper_rate_kbps $max_dl_shaper_rate_kbps $dl_achieved_rate_kbps $dl_load_condition $t_start_us t_dl_last_bufferbloat_us t_dl_last_decay_us dl_shaper_rate_kbps
-		get_next_shaper_rate $min_ul_shaper_rate_kbps $base_ul_shaper_rate_kbps $max_ul_shaper_rate_kbps $ul_achieved_rate_kbps $ul_load_condition $t_start_us t_ul_last_bufferbloat_us t_ul_last_decay_us ul_shaper_rate_kbps
+
+		# COMMENTED OUT WHEN I ADDED THE STARLINK TEST BELOW:	
+#		get_next_shaper_rate $min_dl_shaper_rate_kbps $base_dl_shaper_rate_kbps $max_dl_shaper_rate_kbps $dl_achieved_rate_kbps $dl_load_condition $t_start_us t_dl_last_bufferbloat_us t_dl_last_decay_us dl_shaper_rate_kbps
+#		get_next_shaper_rate $min_ul_shaper_rate_kbps $base_ul_shaper_rate_kbps $max_ul_shaper_rate_kbps $ul_achieved_rate_kbps $ul_load_condition $t_start_us t_ul_last_bufferbloat_us t_ul_last_decay_us ul_shaper_rate_kbps
+
+
+
+		# FOR TESTING STARLINK:
+		# ---------------------
+		current_time_secs=$(( (${EPOCHREALTIME/./} / 1000000) % 60 ))
+		current_time_millis=$(( (${EPOCHREALTIME/./} / 1000) % 1000 ))
+		#printf '%s %s \n' "$current_time_secs" "$current_time_millis"
+
+		# FOR STARLINK TESTING ONLY: If it is at the second of the switchover or 1 second beforehand, drop the rate to the minimum.
+		# TODO: This keeps the minimum rate down for probably a lot longer than it needs to be, try dropping it X milliseconds before the switch.
+	        if ( ((($current_time_secs == 11)) || (($current_time_secs == 12)) || (($current_time_secs == 26)) || (($current_time_secs == 27)) || (($current_time_secs == 41)) || (($current_time_secs == 42)) || (($current_time_secs == 56)) || (($current_time_secs == 57)) ) ); then
+			if ( (($dl_shaper_rate_kbps != $min_dl_shaper_rate_kbps)) ); then
+				#printf ".....Shaper rates %s %s\n" "$saved_dl_shaper_rate_kbps" "$dl_shaper_rate_kbps"
+				saved_dl_shaper_rate_kbps=$dl_shaper_rate_kbps
+				saved_ul_shaper_rate_kbps=$ul_shaper_rate_kbps
+			fi
+			dl_shaper_rate_kbps=$min_dl_shaper_rate_kbps
+			ul_shaper_rate_kbps=$min_ul_shaper_rate_kbps
+			#printf ".....Setting to minimum %s %s\n" "$dl_shaper_rate_kbps" "$ul_shaper_rate_kbps"
+	        # Then when the Starlink switch is done, go back to the base rate
+		else
+		        if ( (($dl_shaper_rate_kbps == $min_dl_shaper_rate_kbps)) && ((($current_time_secs == 13)) || (($current_time_secs == 28)) || (($current_time_secs == 43)) || (($current_time_secs == 58)) ) ); then
+				#printf ".....Restoring previously saved shaper rates %s %s\n" $saved_dl_shaper_rate_kbps $saved_ul_shaper_rate_kbps
+				dl_shaper_rate_kbps=$saved_dl_shaper_rate_kbps
+				ul_shaper_rate_kbps=$saved_ul_shaper_rate_kbps
+			else
+				get_next_shaper_rate $min_dl_shaper_rate_kbps $base_dl_shaper_rate_kbps $max_dl_shaper_rate_kbps $dl_achieved_rate_kbps $dl_load_condition $t_start_us t_dl_last_bufferbloat_us t_dl_last_decay_us dl_shaper_rate_kbps
+				get_next_shaper_rate $min_ul_shaper_rate_kbps $base_ul_shaper_rate_kbps $max_ul_shaper_rate_kbps $ul_achieved_rate_kbps $ul_load_condition $t_start_us t_ul_last_bufferbloat_us t_ul_last_decay_us ul_shaper_rate_kbps
+			fi
+		fi
+		# -------------------
+
+
 
 		(($output_processing_stats)) && printf '%s %-6s %-6s %-3s %-3s %s %-15s %-6s %-6s %-6s %-6s %-6s %s %-14s %-14s %-6s %-6s\n' $EPOCHREALTIME $dl_achieved_rate_kbps $ul_achieved_rate_kbps $dl_load_percent $ul_load_percent $timestamp $reflector $seq $rtt_baseline_us $rtt_us $rtt_delta_us $compensated_delay_thr_us $sum_delays $dl_load_condition $ul_load_condition $dl_shaper_rate_kbps $ul_shaper_rate_kbps
 
